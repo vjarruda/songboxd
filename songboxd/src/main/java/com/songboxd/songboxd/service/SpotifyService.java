@@ -14,6 +14,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class SpotifyService {
+
     private final SpotifyAuthClient authClient;
     private final SpotifyClient spotifyClient;
 
@@ -23,15 +24,38 @@ public class SpotifyService {
     @Value("${spotify.client-secret}")
     private String clientSecret;
 
-    public List<AlbumItemDTO> searchAlbums(String query) {
+    private String accessToken;
+    private long tokenExpiration;
+
+    private String getAccessToken() {
+
+        if (accessToken != null && System.currentTimeMillis() < tokenExpiration) {
+            return accessToken;
+        }
+
         String authHeader = "Basic " + Base64.getEncoder()
                 .encodeToString((clientId + ":" + clientSecret).getBytes());
 
         var tokenResponse = authClient.getToken(authHeader, "grant_type=client_credentials");
-        String accessToken = (String) tokenResponse.get("access_token");
 
+        accessToken = (String) tokenResponse.get("access_token");
 
-        SpotifyAlbumResponse response = spotifyClient.searchAlbums("Bearer " + accessToken, query, "album");
+        int expiresIn = (int) tokenResponse.get("expires_in");
+
+        tokenExpiration = System.currentTimeMillis() + (expiresIn * 1000);
+
+        return accessToken;
+    }
+
+    public List<AlbumItemDTO> searchAlbums(String query) {
+
+        String token = getAccessToken();
+
+        SpotifyAlbumResponse response = spotifyClient.searchAlbums(
+                "Bearer " + token,
+                query,
+                "album"
+        );
 
         return response.getAlbums().getItems();
     }

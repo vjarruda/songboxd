@@ -14,7 +14,7 @@ public interface SpotifyAuthClient {
     @PostMapping(value = "/api/token", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     Map<String, Object> getToken(
             @RequestHeader("Authorization") String basicAuth,
-            @RequestBody String grantType // Mudamos de @RequestParam para @RequestBody
+            @RequestBody String grantType
     );
 }
 
